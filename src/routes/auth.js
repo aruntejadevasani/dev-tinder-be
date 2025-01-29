@@ -23,8 +23,12 @@ authRouter.post("/signup", async (req, res) => {
       password: passHash,
     });
 
-    await user.save();
-    res.send("User Added!");
+    const savedUser = await user.save();
+    const token = await savedUser.getJWT();
+    res.cookie("token", token, {
+      expires: new Date(Date.now() + 8 * 3600000),
+    });
+    res.json({ message: "User Added!", data: savedUser });
   } catch (err) {
     res.status(400).send("ERROR: " + err.message);
   }
@@ -32,6 +36,7 @@ authRouter.post("/signup", async (req, res) => {
 
 authRouter.post("/login", async (req, res) => {
   try {
+    console.log("login");
     const { emailId, password } = req.body;
     if (!validator.isEmail(emailId)) {
       throw new Error("Invalid Credentials!");
@@ -48,7 +53,7 @@ authRouter.post("/login", async (req, res) => {
       res.cookie("token", token, {
         expires: new Date(Date.now() + 8 * 3600000), // Cookies will be expired in 8 hours
       });
-      res.send("Login Success!");
+      res.json(user);
     } else {
       throw new Error("Invalid Credentials!");
     }
